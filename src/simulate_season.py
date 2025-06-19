@@ -84,37 +84,5 @@ try:
 except Exception as e:
     print("Chart skipped:", e)
 
-cat > .github/workflows/weekly-sim.yml <<'EOF'
-name: Weekly PL Simulation
 
-on:
-  schedule:
-    - cron: '0 7 * * 1'       # 07:00 UTC every Monday
-  workflow_dispatch:          # manual “Run workflow” button
-
-jobs:
-  run-sim:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.11'
-
-      - name: Install dependencies
-        run: pip install -r requirements.txt
-
-      - name: Run Monte-Carlo engine
-        run: python src/simulate_season.py
-
-      - name: Commit refreshed outputs
-        run: |
-          git config --global user.email "actions@github.com"
-          git config --global user.name  "GH Action"
-          git add results/* || true
-          git commit -m "Auto-update weekly simulation" || echo "No changes"
-          git push
-EOF
-
+      
