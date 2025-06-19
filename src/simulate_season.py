@@ -7,23 +7,43 @@ DRAW_P   = 0.24        # baseline draw probability
 N_RUNS   = 50000       # Monte-Carlo loops
 ICS_URL  = "https://fixtures.ecal.com/pl-all.ics"   # official PL calendar feed
 SEED_CSV = "data/elo_seed_2025.csv"                 # fallback Elo ratings
+LOCAL_FIX = "data/fixtures_2025_26.csv"   # ← NEW
 # -------------------------------------------- #
 
-# 1) Fetch fixtures ------------------------------------------------------- #
-try:
-    ics_bytes = requests.get(ICS_URL, timeout=30).content
-    cal = Calendar.from_ical(ics_bytes)
-    fixtures = []
-    for ev in cal.walk('vevent'):
-        summary = str(ev.get('summary'))
-        if ' v ' in summary:
-            home, away = summary.split(' v ')
-            fixtures.append((home.strip(), away.strip()))
-except Exception as e:
-    raise RuntimeError(f"Could not fetch or parse ICS feed: {e}")
+# 1) Grab fixtures ------------------------------------------------------- #
+fixtures = []
 
+# --- A) Try local CSV first -------------------------------------------- #
+if os.path.exists(LOCAL_FIX):
+    df_fx = pd.read_csv(LOCAL_FIX, header=None, names=["line"])
+    for row in df_fx["line"]:
+        if " v " in row:
+            home, away = row.split(" v ")
+            fixtures.append((home.strip(), away.strip()))
+    print(f"Loaded {len(fixtures)} fixtures from local CSV.")
+
+# --- B) Fall back to .ics download ------------------------------------- #
+if not fixtures:
+    try:
+        ics_bytes = requests.get(ICS_URL, timeout=30).content
+        cal = Calendar.from_ical(ics_bytes)
+        for ev in cal.walk('vevent'):
+            summary = str(ev.get('summary'))
+            if ' v ' in summary:
+                home, away = summary.split(' v ')
+                fixtures.append((home.strip(), away.strip()))
+        print(f"Loaded {len(fixtures)} fixtures from .ics feed.")
+    except Exception as e:
+        print("⚠️  Could not download .ics – falling back to round-robin:", e)
+        teams = list(elo.keys())
+        for h in teams:
+            for a in teams:
+                if h != a:
+                    fixtures.append((h, a))
+
+# sanity-check
 if len(fixtures) != 380:
-    raise ValueError(f"Expected 380 fixtures, got {len(fixtures)} – check the feed URL.")
+    raise ValueError(f"Expected 380 fixtures, got {len(fixtures)} – check the CSV.")
 
 # 2) Load Elo ratings ----------------------------------------------------- #
 elo_df = pd.read_csv(SEED_CSV)
