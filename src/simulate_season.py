@@ -65,11 +65,11 @@ totals = {t: [] for t in elo}
 for _ in range(N_RUNS):
     pts = dict.fromkeys(elo, 0)
     for home, away in fixtures:
-        ph, pd, pa = outcome_probs(home, away)
+        ph, p_d, pa = outcome_probs(home, away)
         r = random.random()
         if r < ph:
             pts[home] += 3
-        elif r < ph + pd:
+        elif r < ph + p_d:
             pts[home] += 1
             pts[away] += 1
         else:
