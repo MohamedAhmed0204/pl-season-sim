@@ -22,10 +22,17 @@ jobs:
       - name: Run Monte-Carlo engine
         run: python src/simulate_season.py
 
-      - name: Commit refreshed outputs
-        run: |
-          git config --global user.email "actions@github.com"
-          git config --global user.name  "GH Action"
-          git add results/* || true
-          git commit -m "Auto-update weekly simulation" || echo "No changes"
-          git push
+      # - name: Commit refreshed outputs
+#   run: |
+#     git config --global user.email "actions@github.com"
+#     git config --global user.name  "GH Action"
+#     git add results/* || true
+#     git commit -m "Auto-update weekly simulation" || echo "No changes"
+#     git push
+     - name: Upload results
+       uses: actions/upload-artifact@v4
+       with:
+         name: pl-sim-outputs
+         path: results/
+
+     
